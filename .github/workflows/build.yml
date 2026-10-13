@@ -31,9 +31,11 @@ jobs:
         run: |
           echo "=== 检查关键配置 ==="
           grep -q "^CONFIG_TARGET_ramips_mt7620_DEVICE_lenovo_newifi-y1=y" .config || { echo "❌ 设备目标丢失"; exit 1; }
-          grep -q "^CONFIG_PACKAGE_upnpd-nftables=y" .config || { echo "❌ upnpd-nftables 丢失"; exit 1; }
+          grep -q "^CONFIG_PACKAGE_miniupnpd-nftables=y" .config || { echo "❌ miniupnpd-nftables 丢失"; exit 1; }
+          grep -q "^CONFIG_PACKAGE_luci-app-upnp=y" .config || { echo "❌ luci-app-upnp 丢失"; exit 1; }
           grep -q "^CONFIG_PACKAGE_p910nd=y" .config || { echo "❌ p910nd 丢失"; exit 1; }
-          grep -q "^CONFIG_PACKAGE_kmod-usb-printer=y" .config || { echo "❌ usb-printer 丢失"; exit 1; }
+          grep -q "^CONFIG_PACKAGE_kmod-usb-printer=y" .config || { echo "❌ kmod-usb-printer 丢失"; exit 1; }
+          grep -q "^CONFIG_PACKAGE_usbutils=y" .config || { echo "❌ usbutils 丢失"; exit 1; }
           echo "✅ 所有核心包验证通过"
 
       - name: 5. 下载依赖包
