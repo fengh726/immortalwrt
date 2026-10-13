@@ -1,35 +1,53 @@
 name: Build ImmortalWrt Firmware
+
 on:
   workflow_dispatch: # 网页手动点击触发编译
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: 1. 拉取fork后的完整源码
         uses: actions/checkout@v4
+
       - name: 2. 安装编译依赖
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential clang flex bison g++ gawk \
           gcc-multilib g++-multilib gettext git libncurses5-dev libssl-dev \
           python3 python3-pip python3-setuptools rsync unzip zlib1g-dev file wget
+
       - name: 3. 更新并安装 feeds
         run: |
           ./scripts/feeds update -a
           ./scripts/feeds install -a
+
       - name: 4. 加载自定义配置并展开依赖
         run: |
-          # .config放在仓库源码根目录，make defconfig直接读取，自动补齐依赖
+          # .config已提交至仓库根目录，make defconfig自动读取并补齐依赖
           make defconfig
+
+      - name: 4.5 验证核心包是否被保留
+        run: |
+          echo "=== 检查关键配置 ==="
+          grep -q "^CONFIG_TARGET_ramips_mt7620_DEVICE_lenovo_newifi-y1=y" .config || { echo "❌ 设备目标丢失"; exit 1; }
+          grep -q "^CONFIG_PACKAGE_upnpd-nftables=y" .config || { echo "❌ upnpd-nftables 丢失"; exit 1; }
+          grep -q "^CONFIG_PACKAGE_p910nd=y" .config || { echo "❌ p910nd 丢失"; exit 1; }
+          grep -q "^CONFIG_PACKAGE_kmod-usb-printer=y" .config || { echo "❌ usb-printer 丢失"; exit 1; }
+          echo "✅ 所有核心包验证通过"
+
       - name: 5. 下载依赖包
         run: |
           make download -j8
+
       - name: 6. 开始编译
         run: |
           # 多线程编译失败就切单线程输出详细日志排错
           make -j$(nproc) || make -j1 V=s
-      - name: 7. 上传固件（通用路径，不再硬编码芯片目录）
+
+      - name: 7. 上传固件
         uses: actions/upload-artifact@v4
         with:
-          name: firmware
-          path: bin/
+          name: immortalwrt-newifi-y1-firmware
+          path: bin/targets/ramips/mt7620/*
+          retention-days: 7
